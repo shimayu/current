@@ -1,17 +1,15 @@
 # Usage #
-# python connecting_byte.py 
+# python auto_connecting_normal.py 
 
 import numpy as np
 import struct
-import random
 
 ELF_SIZE = 16
 FILE_NUM = 20
-FILE_BYTE = 1360
-BYTE_SIZE = 700
+FILE_BYTE = 1200
+BYTE_SIZE = 900
 THRESHOLD = 600
 HEADER1_LOCATE = 112
-END_OF_MAL = 351
 
 def cutting_func(byte, start, end):
     cutting = []
@@ -32,18 +30,12 @@ def cutting_header1_func(byte):
         cutting_header1.append(byte[i])
     return cutting_header1
 
-def cutting_mal_func(byte):
-    cutting_mal = []
-
-    for i in range(HEADER1_LOCATE, END_OF_MAL + 1):
-        cutting_mal.append(byte[i])
-    return cutting_mal
-
 # def cutting_header2_func(byte):
 #     cutting_header2 = []
 
 #     for i in range(360, len(byte)):
 #         cutting_header2.append(byte[i])
+
 #     return cutting_header2
 
 def insert_zero(index):
@@ -58,9 +50,11 @@ def insert_zero(index):
             insert_byte.append(0)
     return insert_byte
 
+
 if __name__ == '__main__':
     # byte1: free,  byte2: syscall_hook.ko
     entry = np.loadtxt('data_workqueue.csv', delimiter=',', dtype='int')
+
     file1 = raw_input('file1: ')
     f1 = open(file1, "rb")
     file2 = raw_input('file2: ')
@@ -75,16 +69,15 @@ if __name__ == '__main__':
     for i in xrange(len(data2)):
         byte2.append(ord(data2[i]))
 
-    ep = 0  # entry pointer, common in all files 
+    ep = 0
     for file_num in xrange(FILE_NUM):
         if ep > len(entry):
             print("No more entry!")
             break
         f = open("binary_%d" % file_num, "wb")
-        connecting, output, locate = [], [], []
-        cutting_header1, cutting_mal = [], []
+        connecting, cutting_header1 = [], [] 
         cutting_num = 0
-        
+
         print("file_{0}:".format(file_num))
 
         # Insert header1
@@ -118,39 +111,20 @@ if __name__ == '__main__':
             inserting = insert_zero(len(connecting) - 1)
             for i in xrange(len(inserting)):
                 connecting.append(inserting[i])
-
-            locate.append(len(connecting))
             ep = ep + 2
 
         print("cutting_num = {0}, total_byte = {1}"
               .format(cutting_num, len(connecting)))
 
-        # Insert mal_code into random locate between functions
-        print("Inserting mal_code...")
-        if cutting_num == 2:
-            mal_locate = 0
-        else:
-            mal_locate = random.randint(0, cutting_num-2)
-        cutting_mal = cutting_mal_func(byte2)
-        for i in xrange(ELF_SIZE*3):
-            cutting_mal.append(0)
-
-        for i in xrange(locate[mal_locate]):
-            output.append(connecting[i])
-        for i in xrange(len(cutting_mal)):
-            output.append(cutting_mal[i])
-        for i in range(locate[mal_locate], len(connecting)):
-            output.append(connecting[i])
-
         # Insert zero until file size is FILE_BYTE
-        if len(output) > FILE_BYTE:
+        if len(connecting) > FILE_BYTE:
             print("Over FILE_BYTE size!")
         else:
-            for i in xrange(FILE_BYTE - len(output)):
-                output.append(0)            
+            for i in xrange(FILE_BYTE - len(connecting)):
+                connecting.append(0)
 
-        # Write output to binary_file
-        for item in output:
+        # Write connecting to binary_file
+        for item in connecting:
             f.write(struct.pack("B", item))
         f.close()
         
