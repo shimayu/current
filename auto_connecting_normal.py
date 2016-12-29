@@ -5,19 +5,19 @@ import numpy as np
 import struct
 
 ELF_SIZE = 16
-FILE_NUM = 20
-FILE_BYTE = 1200
-BYTE_SIZE = 900
-THRESHOLD = 600
+FILE_NUM = 10
+FILE_BYTE = 1440
+BYTE_SIZE = 960
+THRESHOLD = 700
 HEADER1_LOCATE = 112
 
 def cutting_func(byte, start, end):
     cutting = []
 
-    print("start_byte_locate: byte[{0}] = 0x{1}"
-          .format(start, hex(byte[start])))
-    print("end_byte_locate: byte[{0}] = 0x{1}"
-          .format(end, hex(byte[end])))
+    # print("start_byte_locate: byte[{0}] = 0x{1}"
+    #       .format(start, hex(byte[start])))
+    # print("end_byte_locate: byte[{0}] = 0x{1}"
+    #       .format(end, hex(byte[end])))
     for i in range(start, end + 1):
         cutting.append(byte[i])
     print("size: {0} byte".format(len(cutting)))
@@ -53,8 +53,8 @@ def insert_zero(index):
 
 if __name__ == '__main__':
     # byte1: free,  byte2: syscall_hook.ko
-    entry = np.loadtxt('data_workqueue.csv', delimiter=',', dtype='int')
-
+    entry = np.loadtxt('data_user_namespace_rd.csv', delimiter=',', dtype='int')
+    print("length of ep: {0}".format(len(entry)))
     file1 = raw_input('file1: ')
     f1 = open(file1, "rb")
     file2 = raw_input('file2: ')
@@ -81,7 +81,7 @@ if __name__ == '__main__':
         print("file_{0}:".format(file_num))
 
         # Insert header1
-        print("Insert header1...")
+        # print("Insert header1...")
         cutting_header1 = cutting_header1_func(byte2)
         for i in xrange(len(cutting_header1)):
             connecting.append(cutting_header1[i])
@@ -97,17 +97,17 @@ if __name__ == '__main__':
                 ep = ep + 2
                 continue
             
-            print("cutting...")
+            # print("cutting...")
             cutting = cutting_func(byte1, entry[ep], entry[ep+1])
 
             cutting_num = cutting_num + 1
             print("ep = {0}".format(ep))
-            print("connecting...")
+            # print("connecting...")
             for i in xrange(len(cutting)):
                 connecting.append(cutting[i])
 
             # Insert zero between functions
-            print("inserting zero...")
+            # print("inserting zero...")
             inserting = insert_zero(len(connecting) - 1)
             for i in xrange(len(inserting)):
                 connecting.append(inserting[i])
@@ -123,6 +123,7 @@ if __name__ == '__main__':
             for i in xrange(FILE_BYTE - len(connecting)):
                 connecting.append(0)
 
+        print("connecting size = {0}".format(len(connecting)))
         # Write connecting to binary_file
         for item in connecting:
             f.write(struct.pack("B", item))
