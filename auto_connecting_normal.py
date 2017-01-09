@@ -1,15 +1,20 @@
 # Usage #
-# python auto_connecting_normal.py 
+# python auto_connecting_normal.py <.csv file> <file_start_point>
 
 import numpy as np
 import struct
+import sys
 
 ELF_SIZE = 16
-FILE_NUM = 10
+FILE_NUM = 25
 FILE_BYTE = 1440
 BYTE_SIZE = 960
 THRESHOLD = 700
 HEADER1_LOCATE = 112
+
+def main():
+    print("Cannot create any more files. Exit...")
+    return 0
 
 def cutting_func(byte, start, end):
     cutting = []
@@ -53,7 +58,7 @@ def insert_zero(index):
 
 if __name__ == '__main__':
     # byte1: free,  byte2: syscall_hook.ko
-    entry = np.loadtxt('data_user_namespace_rd.csv', delimiter=',', dtype='int')
+    entry = np.loadtxt(sys.argv[1], delimiter=',', dtype='int')
     print("length of ep: {0}".format(len(entry)))
     file1 = raw_input('file1: ')
     f1 = open(file1, "rb")
@@ -70,7 +75,7 @@ if __name__ == '__main__':
         byte2.append(ord(data2[i]))
 
     ep = 0
-    for file_num in xrange(FILE_NUM):
+    for file_num in range(int(sys.argv[2]), int(sys.argv[2]) + FILE_NUM):
         if ep > len(entry):
             print("No more entry!")
             break
@@ -115,6 +120,8 @@ if __name__ == '__main__':
 
         print("cutting_num = {0}, total_byte = {1}"
               .format(cutting_num, len(connecting)))
+        if len(connecting) == 112:
+            sys.exit(main())
 
         # Insert zero until file size is FILE_BYTE
         if len(connecting) > FILE_BYTE:

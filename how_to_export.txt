@@ -1,0 +1,16 @@
+## sys_call_table を export
+- cd /usr/src/linux-3.1
+- vi arch/x86/kernel/i386_ksyms_32.c
+- 以下の２行をファイルの末尾に追加
+extern void* sys_call_table[];
+EXPORT_SYMBOL(sys_call_table);
+
+## sys_call_table の読み取り専用属性を書き込み可能属性へ
+- cd /usr/src/linux-4.1
+- vi arch/x86/kernel/entry_32.S
+- .section部分の記述を修正
+/* .section .rodata, "a" */
+.section .data, "aw"
+#include "syscall_table.S"
+
+syscall_table_size=(.-sys_call_table)

